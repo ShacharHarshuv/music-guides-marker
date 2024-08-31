@@ -12,9 +12,13 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "@types/fluent-ffmpeg": "^2.1.26",
     "@types/node": "^22.5.1",
     "prettier": "^3.3.3",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.5.4"
+  },
+  "dependencies": {
+    "fluent-ffmpeg": "^2.1.3"
   }
 }
