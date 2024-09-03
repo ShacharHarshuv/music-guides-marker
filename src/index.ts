@@ -72,13 +72,13 @@ function allVoicesBut(excludingRole: string) {
 
 createTrack(`Backtrack`, []);
 Object.entries(rolesToGuides).forEach(([role, { guide, vox }]) => {
-  createTrack(`${role} - Solo`, [vox]);
+  createTrack(`${role} - Vocal Solo`, [vox]);
   createTrack(`${role} - Guide Solo`, [guide]);
-  createTrack(`${role} - Guide with other voices`, [
+  createTrack(`${role} - Guide with Other Voices`, [
     guide,
     ...allVoicesBut(role),
   ]);
-  createTrack(`${role} - Mute`, allVoicesBut(role));
+  createTrack(`${role} - Only Other Voices`, allVoicesBut(role));
 });
 
 createTrack("Demo", [
