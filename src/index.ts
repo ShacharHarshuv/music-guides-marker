@@ -2,10 +2,19 @@ import { combineMp3Files } from "./combine-mp3-files";
 import path from "node:path";
 import { mkdirSync, readdirSync, rmdirSync, rmSync } from "node:fs";
 
-const inputLocation =
-  "G:/My Drive/Music/Compositions/Original Songs/Musicals/Amazons/girls/Stems/amazons_girls_stems_2024-08-30";
+const trackList = [
+  '1 - The Castles Must Be Winners',
+];
 
-const outputLocation = inputLocation.split("Stems").join("Guides");
+const stemsFolder = "G:\\My Drive\\Music\\Compositions\\Original Songs\\Musicals\\Amazons\\STEMS";
+
+const trackToGenerate = trackList[0];
+
+const inputLocation = path.join(stemsFolder, trackToGenerate);
+
+const guidesFolder = "H:\\My Drive\\AACR - 2024\\Amazons - For Performers";
+
+const outputLocation = path.join(guidesFolder, trackToGenerate);
 
 // remove the output location if it exists
 try {
