@@ -2,11 +2,10 @@ import { combineMp3Files } from "./combine-mp3-files";
 import path from "node:path";
 import { mkdirSync, readdirSync, rmdirSync, rmSync } from "node:fs";
 
-const trackList = [
-  '1 - The Castles Must Be Winners',
-];
+const trackList = ["1 - The Castles Must Be Winners"];
 
-const stemsFolder = "G:\\My Drive\\Music\\Compositions\\Original Songs\\Musicals\\Amazons\\STEMS";
+const stemsFolder =
+  "G:\\My Drive\\Music\\Compositions\\Original Songs\\Musicals\\Amazons\\STEMS";
 
 const trackToGenerate = trackList[0];
 
@@ -67,8 +66,9 @@ if (!songName) {
 }
 
 function createTrack(name: string, files: string[]) {
-  combineMp3Files(
-    [backtrack, ...files].map((file) => path.join(inputLocation, file)),
+  console.log(`creating ${name} ... `);
+  return combineMp3Files(
+    [backtrack!, ...files].map((file) => path.join(inputLocation, file)),
     path.join(outputLocation, `${songName} - ${name}.mp3`),
   );
 }
@@ -79,18 +79,23 @@ function allVoicesBut(excludingRole: string) {
     .filter((vox) => vox !== null);
 }
 
-createTrack(`Backtrack`, []);
-Object.entries(rolesToGuides).forEach(([role, { guide, vox }]) => {
-  createTrack(`${role} - Vocal Solo`, [vox]);
-  createTrack(`${role} - Guide Solo`, [guide]);
-  createTrack(`${role} - Guide with Other Voices`, [
-    guide,
-    ...allVoicesBut(role),
-  ]);
-  createTrack(`${role} - Only Other Voices`, allVoicesBut(role));
+Promise.all([
+  createTrack("Demo", [
+    backtrack,
+    ...Object.values(rolesToGuides).map(({ vox }) => vox),
+  ]),
+  createTrack(`Backtrack`, []),
+  ...Object.entries(rolesToGuides).flatMap(([role, { guide, vox }]) => {
+    return [
+      createTrack(`${role} - Vocal Solo`, [vox]),
+      createTrack(`${role} - Guide Solo`, [guide]),
+      createTrack(`${role} - Guide with Other Voices`, [
+        guide,
+        ...allVoicesBut(role),
+      ]),
+      createTrack(`${role} - Only Other Voices`, allVoicesBut(role)),
+    ];
+  }),
+]).then(() => {
+  console.log("Finished");
 });
-
-createTrack("Demo", [
-  backtrack,
-  ...Object.values(rolesToGuides).map(({ vox }) => vox),
-]);
