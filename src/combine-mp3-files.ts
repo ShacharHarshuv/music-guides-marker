@@ -10,7 +10,7 @@ export function combineMp3Files(inputFiles: string[], outputFile: string) {
       .complexFilter([
         {
           filter: "amix",
-          options: { inputs: inputFiles.length, duration: "longest" },
+          options: { inputs: inputFiles.length, duration: "longest", normalize: 0 },
         },
       ])
       .audioCodec("libmp3lame")
