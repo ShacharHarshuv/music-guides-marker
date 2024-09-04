@@ -1,5 +1,5 @@
 import { readdirSync } from 'fs';
-import { PDFDocument } from 'pdf-lib';
+import { PDFDocument, rgb } from 'pdf-lib';
 import {
   readFileSync,
   writeFileSync,
@@ -34,18 +34,50 @@ export async function makeCombinedScore(path: string) {
 
   const scriptTextItems = await extractTextItems(scriptBuffer);
   const songHeaders = scriptTextItems.filter(item => /#\d/.test(item.text));
+  const songEnds = scriptTextItems.filter(item => /End of Song/.test(item.text));
+  console.log(songEnds);
+
+  if (songHeaders.length !== songEnds.length) {
+    throw new Error(`The number of song headers (${ songHeaders.length }) and song ends (${songEnds.length}) do not match`);
+  }
 
   let offset = 0;
   for (let i = 0; i < songHeaders.length; i++) {
     const songHeader = songHeaders[i];
+    const songEnd = songEnds[i];
+    const pagesIndicesToRemove = range(songHeader.page + 1, songEnd.page); // range is inclusive for start and exclusive for end
+
+    const startPage = scriptDoc.getPage(songHeader.page + offset);
+    startPage.drawRectangle({
+      x: 0,
+      y: 0, // origin is bottom left
+      width: startPage.getWidth(),
+      height: startPage.getHeight() - songHeader.y - songHeader.height + 25,
+      color: rgb(1, 1, 1),
+    });
+
+    const endPage = scriptDoc.getPage(songEnd.page + offset);
+    endPage.drawRectangle({
+      x: 0,
+      y: endPage.getHeight() - songEnd.y - 10, // origin is bottom left
+      width: endPage.getWidth(),
+      height: songEnd.y + songEnd.height - 60, // conserve page numbers
+      color: rgb(1, 1, 1),
+    });
+
+    pagesIndicesToRemove.forEach((pageIndex) => {
+      scriptDoc.removePage(pageIndex + offset);
+    });
 
     const insertIndex = songHeader.page;
-    const pagesToCopyIndices = range(flowPageIndexes[i], flowPageIndexes[i + 1]);
-    const insertPages = await scriptDoc.copyPages(scoreDoc, pagesToCopyIndices);
+    const pagesIndicesToCopy = range(flowPageIndexes[i], flowPageIndexes[i + 1]);
+    const insertPages = await scriptDoc.copyPages(scoreDoc, pagesIndicesToCopy);
+
     insertPages.forEach((page, i) => {
-      scriptDoc.insertPage(insertIndex + i + + offset + 1, page);
+      scriptDoc.insertPage(insertIndex + i + offset + 1, page);
     });
-    offset += pagesToCopyIndices.length;
+    offset += pagesIndicesToCopy.length;
+    offset -= pagesIndicesToRemove.length;
   }
 
   writeFileSync(`${path}/Combined ${scriptLabel} & ${scoreLabel} - ${showName}.pdf`, await scriptDoc.save());
@@ -54,6 +86,10 @@ export async function makeCombinedScore(path: string) {
 }
 
 function range(start: number, end: number): number[] {
+  if (start >= end) {
+    return [];
+  }
+
   return Array.from({ length: end - start }, (_, i) => start + i);
 }
 
@@ -62,8 +98,8 @@ async function extractTextItems(buffer: Buffer) {
 
   const textContentWithCoords: {
     text: string;
-    x: string;
-    y: string;
+    x: number;
+    y: number;
     width: number;
     height: number;
     page: number;
