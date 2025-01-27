@@ -10,12 +10,12 @@ export async function makeCombineScoreFromDirectory(path: string) {
   const files = readdirSync(path).filter((file) =>
     file.endsWith(".pdf"),
   );
-  const scores = files.filter((file) => file.toLowerCase().startsWith("score"));
+  const scores = files.filter((file) => file.toLowerCase().includes("score"));
   if (!scores.length) {
     throw new Error(`No score found. Make sure a pdf file that includes "score" is in the folder.`);
   }
 
-  const script = files.find((file) => file.toLowerCase().startsWith("script"));
+  const script = files.find((file) => file.toLowerCase().includes("script"));
 
   if (!script) {
     throw new Error(`No script found. Make sure a pdf file that includes "script" is in the folder.`);

@@ -21,6 +21,7 @@ export async function makeGuides(options: {
   );
 
   let backtrack: string | null = null;
+  let dialogue: string | null = null;
   const rolesToGuides: Record<
     string,
     {
@@ -45,6 +46,11 @@ export async function makeGuides(options: {
       return;
     }
 
+    if (role === 'Dialogue') {
+      dialogue = file;
+      return;
+    }
+
     const type = trackType === "Audio" ? "vox" : "guide";
 
     (rolesToGuides[role] ??= { guide: "", vox: "" })[type] = file;
@@ -61,6 +67,7 @@ export async function makeGuides(options: {
   }
 
   function createTrack(name: string, files: string[]) {
+    console.log('files', files);
     console.log(`creating ${name} ... `);
     return combineMp3Files(
       [backtrack!, ...files].map((file) => path.join(options.input, file)),
@@ -69,18 +76,36 @@ export async function makeGuides(options: {
   }
 
   function allVoicesBut(excludingRole: string) {
+    console.log('rolesToGuides', rolesToGuides);
     return Object.entries(rolesToGuides)
-      .map(([role, { vox }]) => (role !== excludingRole ? vox : null))
+      .map(([role, { vox }]) => {
+        if (role !== excludingRole) {
+          if (!vox) {
+            throw new Error(`No vox for ${role}`);
+          }
+
+          return vox;
+        }
+
+        return null;
+      })
       .filter((vox) => vox !== null);
   }
 
   return Promise.all([
     createTrack("Demo", [
-      backtrack,
+      ...dialogue ? [dialogue] : [],
       ...Object.values(rolesToGuides).map(({ vox }) => vox),
     ]),
     createTrack(`Backtrack`, []),
     ...Object.entries(rolesToGuides).flatMap(([role, { guide, vox }]) => {
+      if (!vox) {
+        throw new Error(`No vox for ${role}`);
+      }
+      if (!guide) {
+        throw new Error(`No guide for ${role}`);
+      }
+
       return [
         createTrack(`${role} - Vocal Solo`, [vox]),
         createTrack(`${role} - Guide Solo`, [guide]),
@@ -88,7 +113,7 @@ export async function makeGuides(options: {
           guide,
           ...allVoicesBut(role),
         ]),
-        createTrack(`${role} - Only Other Voices`, allVoicesBut(role)),
+        createTrack(`${role} - Only Other Voices`, [...dialogue ? [dialogue] : [], ...allVoicesBut(role)]),
       ];
     }),
   ]).then(() => {
