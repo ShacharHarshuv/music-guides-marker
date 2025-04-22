@@ -22,11 +22,11 @@ export async function makeCombineScoreFromDirectory(path: string) {
   }
 
   await Promise.all(scores.map(async (score) => {
-    const [scoreLabel, showName] = score.split('.')[0].split(' - ');
+    const [showName, scoreLabel] = score.split('.')[0].split(' - ');
 
-    const [scriptLabel] = script.split('.')[0].split(' - ');
+    const [, scriptLabel] = script.split('.')[0].split(' - ');
 
-    await makeCombinedScore(`${path}/${score}`, `${path}/${script}`, `${path}/Combined ${scriptLabel} & ${scoreLabel} - ${showName}.pdf`);
+    await makeCombinedScore(`${path}/${score}`, `${path}/${script}`, `${path}/${showName} - ${scriptLabel} & ${scoreLabel} Combined.pdf`);
   }));
 }
 

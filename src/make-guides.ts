@@ -1,15 +1,8 @@
-import { combineMp3Files } from './combine-mp3-files';
-import path from 'node:path';
-import {
-  rmSync,
-  mkdirSync,
-  readdirSync,
-} from 'node:fs';
+import { combineMp3Files } from "./combine-mp3-files";
+import path from "node:path";
+import { rmSync, mkdirSync, readdirSync } from "node:fs";
 
-export async function makeGuides(options: {
-  input: string;
-  output: string;
-}) {
+export async function makeGuides(options: { input: string; output: string }) {
   // remove the output location if it exists
   try {
     rmSync(options.output, { recursive: true });
@@ -17,7 +10,7 @@ export async function makeGuides(options: {
   mkdirSync(options.output, { recursive: true });
 
   const files = readdirSync(options.input).filter((file) =>
-    file.endsWith(".mp3"),
+    file.endsWith(".mp3")
   );
 
   let backtrack: string | null = null;
@@ -46,7 +39,7 @@ export async function makeGuides(options: {
       return;
     }
 
-    if (role === 'Dialogue') {
+    if (role === "Dialogue") {
       dialogue = file;
       return;
     }
@@ -67,16 +60,16 @@ export async function makeGuides(options: {
   }
 
   function createTrack(name: string, files: string[]) {
-    console.log('files', files);
+    console.log("files", files);
     console.log(`creating ${name} ... `);
     return combineMp3Files(
       [backtrack!, ...files].map((file) => path.join(options.input, file)),
-      path.join(options.output, `${songName} - ${name}.mp3`),
+      path.join(options.output, `${songName} - ${name}.mp3`)
     );
   }
 
   function allVoicesBut(excludingRole: string) {
-    console.log('rolesToGuides', rolesToGuides);
+    console.log("rolesToGuides", rolesToGuides);
     return Object.entries(rolesToGuides)
       .map(([role, { vox }]) => {
         if (role !== excludingRole) {
@@ -94,7 +87,7 @@ export async function makeGuides(options: {
 
   return Promise.all([
     createTrack("Demo", [
-      ...dialogue ? [dialogue] : [],
+      ...(dialogue ? [dialogue] : []),
       ...Object.values(rolesToGuides).map(({ vox }) => vox),
     ]),
     createTrack(`Backtrack`, []),
@@ -106,18 +99,27 @@ export async function makeGuides(options: {
         throw new Error(`No guide for ${role}`);
       }
 
+      const isOnlyRole = Object.keys(rolesToGuides).length === 1;
+
+      if (isOnlyRole) {
+        return [createTrack(`${role} - Guide`, [guide])];
+      }
+
       return [
         createTrack(`${role} - Vocal Solo`, [vox]),
         createTrack(`${role} - Guide Solo`, [guide]),
         createTrack(`${role} - Guide with Other Voices`, [
           guide,
           ...allVoicesBut(role),
+          ...(dialogue ? [dialogue] : []),
         ]),
-        createTrack(`${role} - Only Other Voices`, [...dialogue ? [dialogue] : [], ...allVoicesBut(role)]),
+        createTrack(`${role} - Only Other Voices`, [
+          ...(dialogue ? [dialogue] : []),
+          ...allVoicesBut(role),
+        ]),
       ];
     }),
   ]).then(() => {
     console.log("Finished");
   });
-
 }

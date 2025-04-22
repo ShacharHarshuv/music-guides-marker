@@ -1,19 +1,51 @@
+import { makeCombineScoreFromDirectory } from "./make-combined-score";
 import path from "node:path";
-import { makeGuides } from './make-guides';
-import { makeCombinedScore } from './make-combined-score';
+import { makeGuides } from "./make-guides";
 
-// const trackList = ["1 - The Castles Must Be Winners", "2 - My Turn", "3 - Really", "4 - Shouldn't", "5 - Finale"];
-//
-// const stemsFolder =
-//   "G:\\My Drive\\Music\\Compositions\\Original Songs\\Musicals\\Amazons\\STEMS";
-//
-// const trackToGenerate = trackList[0];
-//
-// const outputLocation = path.join("H:\\My Drive\\AACR - 2024\\Amazons - For Performers", trackToGenerate);
-//
-// makeGuides({
-//   input: path.join(stemsFolder, trackToGenerate),
-//   output: outputLocation,
-// })
+const trackList = [
+  "1 - Rachel",
+  "2 - Pirate Creed",
+  "3 - Can't Let You Leave",
+  "3a - Pirate Creed Reprise",
+  "4 - Heart's Buried Treasure",
+  "5 - Finale",
+];
 
-makeCombinedScore('H:\\My Drive\\AACR - 2024\\Amazons - For Performers');
+const stemsFolder =
+  "G:\\My Drive\\Music\\Compositions\\Original Songs\\Musicals\\pirates guests musical\\STEMS";
+
+const trackIndex: number | null = null;
+
+const tracksToGenerate =
+  trackIndex !== null ? [trackList[trackIndex]] : trackList;
+
+async function main() {
+  for (const [index, trackToGenerate] of tracksToGenerate.entries()) {
+    console.log(`Generating guides for ${trackToGenerate}`);
+    const outputLocation = path.join(
+      "H:\\My Drive\\Musicals\\The Legend of Rachel - Musical\\Summerfest Production\\For Performers\\Audio Files",
+      trackToGenerate
+    );
+
+    try {
+      await makeGuides({
+        input: path.join(stemsFolder, trackToGenerate),
+        output: outputLocation,
+      });
+    } catch (error) {
+      console.error(
+        `Error generating guides for ${trackToGenerate} (${index}):`,
+        error
+      );
+    }
+  }
+}
+
+// Execute the main function
+main().catch((error) => {
+  console.error("Unhandled error in main function:", error);
+  process.exit(1);
+});
+
+// Note: requires newer version of node
+// makeCombineScoreFromDirectory('H:\\My Drive\\Musicals\\AIDEN - Musical\\15-20 minute version\\AIDEN - Production Materials');
