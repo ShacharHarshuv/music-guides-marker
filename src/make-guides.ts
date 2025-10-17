@@ -1,6 +1,7 @@
 import { combineMp3Files } from "./combine-mp3-files";
 import path from "node:path";
 import { rmSync, mkdirSync, readdirSync } from "node:fs";
+import { exec } from "node:child_process";
 
 export async function makeGuides(options: { input: string; output: string }) {
   // remove the output location if it exists
@@ -63,7 +64,7 @@ export async function makeGuides(options: { input: string; output: string }) {
     console.log("files", files);
     console.log(`creating ${name} ... `);
     return combineMp3Files(
-      [backtrack!, ...files].map((file) => path.join(options.input, file)),
+      files.map((file) => path.join(options.input, file)),
       path.join(options.output, `${songName} - ${name}.mp3`)
     );
   }
@@ -87,10 +88,11 @@ export async function makeGuides(options: { input: string; output: string }) {
 
   return Promise.all([
     createTrack("Demo", [
+      backtrack!,
       ...(dialogue ? [dialogue] : []),
       ...Object.values(rolesToGuides).map(({ vox }) => vox),
     ]),
-    createTrack(`Backtrack`, []),
+    createTrack(`Backtrack`, [backtrack!]),
     ...Object.entries(rolesToGuides).flatMap(([role, { guide, vox }]) => {
       if (!vox) {
         throw new Error(`No vox for ${role}`);
@@ -102,21 +104,25 @@ export async function makeGuides(options: { input: string; output: string }) {
       const isOnlyRole = Object.keys(rolesToGuides).length === 1;
 
       if (isOnlyRole) {
-        return [createTrack(`${role} - Guide`, [guide])];
+        return [createTrack(`${role} - Pluck`, [guide])];
       }
 
       return [
-        createTrack(`${role} - Vocal Solo`, [vox]),
-        createTrack(`${role} - Guide Solo`, [guide]),
-        createTrack(`${role} - Guide with Other Voices`, [
+        createTrack(`${role} - Vocal Solo`, [backtrack!, vox]),
+        createTrack(`${role} - Pluck Solo + backtrack`, [backtrack!, guide]), // todo: consider renaming to "Pluck w/ Accompaniment"
+        createTrack(`${role} - Puck with other voices`, [
+          // todo: consider renaming to "Pluck w/ Other Voices"
+          backtrack!,
           guide,
           ...allVoicesBut(role),
           ...(dialogue ? [dialogue] : []),
         ]),
         createTrack(`${role} - Only Other Voices`, [
+          backtrack!,
           ...(dialogue ? [dialogue] : []),
           ...allVoicesBut(role),
         ]),
+        createTrack(`${role} - Pluck Solo`, [guide]),
       ];
     }),
   ]).then(() => {

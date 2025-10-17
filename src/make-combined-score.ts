@@ -1,52 +1,80 @@
-import { readdirSync } from 'fs';
-import { PDFDocument, rgb } from 'pdf-lib';
-import {
-  readFileSync,
-  writeFileSync,
-} from 'node:fs';
-import * as pdfjsLib from 'pdfjs-dist';
+import { readdirSync } from "fs";
+import { PDFDocument, rgb } from "pdf-lib";
+import { readFileSync, writeFileSync } from "node:fs";
+import * as pdfjsLib from "pdfjs-dist";
 
 export async function makeCombineScoreFromDirectory(path: string) {
-  const files = readdirSync(path).filter((file) =>
-    file.endsWith(".pdf"),
+  const files = readdirSync(path).filter((file) => file.endsWith(".pdf"));
+  const scores = files.filter(
+    (file) =>
+      file.toLowerCase().includes("score") &&
+      !file.toLowerCase().includes("combined")
   );
-  const scores = files.filter((file) => file.toLowerCase().includes("score"));
   if (!scores.length) {
-    throw new Error(`No score found. Make sure a pdf file that includes "score" is in the folder.`);
+    throw new Error(
+      `No score found. Make sure a pdf file that includes "score" is in the folder.`
+    );
+  } else {
+    console.log(`Found ${scores.length} score(s). (${scores.join(", ")})`);
   }
 
-  const script = files.find((file) => file.toLowerCase().includes("script"));
+  const script = files.find(
+    (file) =>
+      file.toLowerCase().includes("script") &&
+      !file.toLowerCase().includes("combined")
+  );
 
   if (!script) {
-    throw new Error(`No script found. Make sure a pdf file that includes "script" is in the folder.`);
+    throw new Error(
+      `No script found. Make sure a pdf file that includes "script" is in the folder.`
+    );
+  } else {
+    console.log(`Found script: "${script}"`);
   }
 
-  await Promise.all(scores.map(async (score) => {
-    const [showName, scoreLabel] = score.split('.')[0].split(' - ');
+  await Promise.all(
+    scores.map(async (score) => {
+      const [scoreLabel, showName] = score.split(".")[0].split(" - ");
+      console.log("showName", showName, "scoreLabel", scoreLabel);
 
-    const [, scriptLabel] = script.split('.')[0].split(' - ');
+      const [scriptLabel] = script.split(".")[0].split(" - ");
+      console.log("scriptLabel");
 
-    await makeCombinedScore(`${path}/${score}`, `${path}/${script}`, `${path}/${showName} - ${scriptLabel} & ${scoreLabel} Combined.pdf`);
-  }));
+      await makeCombinedScore(
+        `${path}/${score}`,
+        `${path}/${script}`,
+        `${path}/Combined ${scriptLabel} & ${scoreLabel} - ${showName}.pdf`
+      );
+    })
+  );
 }
 
-export async function makeCombinedScore(scoreFilePath: string, scriptFilePath: string, outputFilePath: string) {
-
+export async function makeCombinedScore(
+  scoreFilePath: string,
+  scriptFilePath: string,
+  outputFilePath: string
+) {
   const scoreBuffer = readFileSync(scoreFilePath);
   const scoreDoc = await PDFDocument.load(scoreBuffer);
   const scoreTextItems = await extractTextItems(scoreBuffer);
-  const flowPageIndexes = scoreTextItems.filter(item => /\[Rev./.test(item.text)).map(item => item.page);
+  const flowPageIndexes = scoreTextItems
+    .filter((item) => /\[Rev./.test(item.text))
+    .map((item) => item.page);
   flowPageIndexes.push(scoreDoc.getPageCount());
 
   const scriptBuffer = readFileSync(scriptFilePath);
   const scriptDoc = await PDFDocument.load(scriptBuffer);
 
   const scriptTextItems = await extractTextItems(scriptBuffer);
-  const songHeaders = scriptTextItems.filter(item => /#\d/.test(item.text));
-  const songEnds = scriptTextItems.filter(item => /End of Song/.test(item.text));
+  const songHeaders = scriptTextItems.filter((item) => /#\d/.test(item.text));
+  const songEnds = scriptTextItems.filter((item) =>
+    /End of Song/.test(item.text)
+  );
 
   if (songHeaders.length !== songEnds.length) {
-    throw new Error(`The number of song headers (${ songHeaders.length }) and song ends (${songEnds.length}) do not match`);
+    throw new Error(
+      `The number of song headers (${songHeaders.length}) and song ends (${songEnds.length}) do not match`
+    );
   }
 
   let offset = 0;
@@ -78,7 +106,10 @@ export async function makeCombinedScore(scoreFilePath: string, scriptFilePath: s
     });
 
     const insertIndex = songHeader.page;
-    const pagesIndicesToCopy = range(flowPageIndexes[i], flowPageIndexes[i + 1]);
+    const pagesIndicesToCopy = range(
+      flowPageIndexes[i],
+      flowPageIndexes[i + 1]
+    );
     const insertPages = await scriptDoc.copyPages(scoreDoc, pagesIndicesToCopy);
 
     insertPages.forEach((page, i) => {
@@ -90,7 +121,7 @@ export async function makeCombinedScore(scoreFilePath: string, scriptFilePath: s
 
   writeFileSync(outputFilePath, await scriptDoc.save());
 
-  console.log('Done.')
+  console.log("Done.");
 }
 
 function range(start: number, end: number): number[] {
@@ -102,7 +133,9 @@ function range(start: number, end: number): number[] {
 }
 
 async function extractTextItems(buffer: Buffer) {
-  const pdfDocument = await pdfjsLib.getDocument({ data: Uint8Array.from(buffer) }).promise;
+  const pdfDocument = await pdfjsLib.getDocument({
+    data: Uint8Array.from(buffer),
+  }).promise;
 
   const textContentWithCoords: {
     text: string;
@@ -118,14 +151,24 @@ async function extractTextItems(buffer: Buffer) {
     const textContent = await page.getTextContent();
 
     textContent.items.forEach((item) => {
-      if ('str' in item && 'transform' in item) {
-        const tx = pdfjsLib.Util.transform(page.getViewport({ scale: 1 }).transform, item.transform);
+      if ("str" in item && "transform" in item) {
+        const tx = pdfjsLib.Util.transform(
+          page.getViewport({ scale: 1 }).transform,
+          item.transform
+        );
         const x = tx[4];
         const y = tx[5];
         const width = item.width;
         const height = item.height;
 
-        textContentWithCoords.push({ text: item.str, x, y, width, height, page: pageIndex });
+        textContentWithCoords.push({
+          text: item.str,
+          x,
+          y,
+          width,
+          height,
+          page: pageIndex,
+        });
       }
     });
   }
