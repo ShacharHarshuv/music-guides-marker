@@ -75,7 +75,8 @@ export async function makeGuides(options: { input: string; output: string }) {
       .map(([role, { vox }]) => {
         if (role !== excludingRole) {
           if (!vox) {
-            throw new Error(`No vox for ${role}`);
+            console.warn(`No vox for ${role}`);
+            return null;
           }
 
           return vox;
@@ -95,7 +96,8 @@ export async function makeGuides(options: { input: string; output: string }) {
     createTrack(`Backtrack`, [backtrack!]),
     ...Object.entries(rolesToGuides).flatMap(([role, { guide, vox }]) => {
       if (!vox) {
-        throw new Error(`No vox for ${role}`);
+        console.warn(`No vox for ${role}`);
+        return [];
       }
       if (!guide) {
         throw new Error(`No guide for ${role}`);
@@ -104,24 +106,29 @@ export async function makeGuides(options: { input: string; output: string }) {
       const isOnlyRole = Object.keys(rolesToGuides).length === 1;
 
       if (isOnlyRole) {
-        return [createTrack(`${role} - Pluck`, [guide])];
+        return [
+          createTrack(`${role} - Pluck`, [guide]),
+          createTrack(`${role} - Pluck + Backtrack`, [backtrack!, guide]),
+        ];
       }
 
       return [
-        createTrack(`${role} - Vocal Solo`, [backtrack!, vox]),
+        vox && createTrack(`${role} - Vocal Solo`, [backtrack!, vox]),
         createTrack(`${role} - Pluck Solo + backtrack`, [backtrack!, guide]), // todo: consider renaming to "Pluck w/ Accompaniment"
-        createTrack(`${role} - Puck with other voices`, [
-          // todo: consider renaming to "Pluck w/ Other Voices"
-          backtrack!,
-          guide,
-          ...allVoicesBut(role),
-          ...(dialogue ? [dialogue] : []),
-        ]),
-        createTrack(`${role} - Only Other Voices`, [
-          backtrack!,
-          ...(dialogue ? [dialogue] : []),
-          ...allVoicesBut(role),
-        ]),
+        vox &&
+          createTrack(`${role} - Puck with other voices`, [
+            // todo: consider renaming to "Pluck w/ Other Voices"
+            backtrack!,
+            guide,
+            ...allVoicesBut(role),
+            ...(dialogue ? [dialogue] : []),
+          ]),
+        vox &&
+          createTrack(`${role} - Only Other Voices`, [
+            backtrack!,
+            ...(dialogue ? [dialogue] : []),
+            ...allVoicesBut(role),
+          ]),
         createTrack(`${role} - Pluck Solo`, [guide]),
       ];
     }),

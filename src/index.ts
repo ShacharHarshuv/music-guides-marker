@@ -6,9 +6,9 @@ import { exec } from "node:child_process";
 import { log } from "node:console";
 
 // Specify which project to use
-const project = projects.robert;
+const project = projects.jack;
 
-const trackIndex: number | null = 2;
+const trackIndex: number | null = 0;
 
 const trackList = project.trackList ?? [""];
 

@@ -20,7 +20,7 @@ export const projects = {
       "H:/My Drive/Musicals/The Legend of Rachel - Musical/Summerfest Production/For Performers/Audio Files",
   },
   jack: {
-    trackList: ["1 - Beautiful", "2 - Plant Them Beans"],
+    trackList: ["1 - Beautiful", "2 - Plant Them Beans", "3 - Harp Reprise"],
     stemsFolder:
       "G:/My Drive/Music/Compositions/Original Songs/Musicals/Jack and Harper/STEMS",
     outputBasePath:
@@ -49,8 +49,8 @@ export const projects = {
   robert: {
     trackList: undefined,
     stemsFolder:
-      "G:/My Drive/Music/Compositions/Original Songs/Musicals/standalone musical numbers/princess bride - dreadful pirate robert/STEMS",
+      "G:/My Drive/Music/Compositions/Original Songs/Musicals/standalone musical numbers/pb - pirate robert/STEMS",
     outputBasePath:
-      "H:/My Drive/Non-show-specific submisisons/BMI Workshop/BMI Class 2025 (Auditing)/Exercises/say not what you mean/The Dread Pirate Roberts/For Performers",
+      "H:/My Drive/Non-show-specific submisisons/BMI Workshop/BMI Class 2025 (Auditing)/Exercises/say not what you mean/The Dread Pirate Roberts/For Performers/Audio Files",
   },
 } satisfies Record<string, ProjectConfig>;
