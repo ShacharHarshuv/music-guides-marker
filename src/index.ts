@@ -6,9 +6,9 @@ import { exec } from "node:child_process";
 import { log } from "node:console";
 
 // Specify which project to use
-const project = projects.jack;
+const project = projects.foreverfornow;
 
-const trackIndex: number | null = 0;
+const trackIndex: number | null = null;
 
 const trackList = project.trackList ?? [""];
 
@@ -21,7 +21,7 @@ if (trackList.length === 0) {
 }
 
 const tracksToGenerate =
-  !project.trackList && trackIndex !== null
+  trackIndex !== null
     ? [trackList[project.trackList ? trackIndex : 0]]
     : trackList;
 

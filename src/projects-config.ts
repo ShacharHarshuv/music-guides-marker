@@ -49,8 +49,41 @@ export const projects = {
   robert: {
     trackList: undefined,
     stemsFolder:
-      "G:/My Drive/Music/Compositions/Original Songs/Musicals/standalone musical numbers/pb - pirate robert/STEMS",
+      "G:/My Drive/Music/Compositions/Original Songs/Musicals/standalone musical numbers/Blanche 2025/STEMS",
     outputBasePath:
-      "H:/My Drive/Non-show-specific submisisons/BMI Workshop/BMI Class 2025 (Auditing)/Exercises/say not what you mean/The Dread Pirate Roberts/For Performers/Audio Files",
+      "H:/My Drive/Non-show-specific submisisons/BMI Workshop/BMI Class 2025 (Auditing)/Exercises/Blanche Song 2025/For Performers",
+  },
+  blanche: {
+    trackList: undefined,
+    stemsFolder:
+      "G:/My Drive/Music/Compositions/Original Songs/Musicals/standalone musical numbers/Blanche 2025/STEMS",
+    outputBasePath:
+      "H:/My Drive/Non-show-specific submisisons/BMI Workshop/BMI Class 2025 (Auditing)/Exercises/Blanche Song 2025/For Performers",
+  },
+  lift: {
+    trackList: undefined,
+    stemsFolder:
+      "G:/My Drive/Music/Compositions/Original Songs/Musicals/standalone musical numbers/punchup 2025/STEMS",
+    outputBasePath:
+      "H:/My Drive/Standalone songs/Punchup26-rob&clay/Rehearsal Tracks",
+  },
+  foreverfornow: {
+    trackList: undefined,
+    stemsFolder:
+      "G:/My Drive/Music/Compositions/Original Songs/Musicals/standalone musical numbers/bmi love song 2026 Hazel Gus/STEMS",
+    outputBasePath:
+      "H:/My Drive/BMI Workshop/BMI Class 2025 (Auditing)/Exercises/love song Clay & Anya/For Performers/Tracks",
+  },
+  oi: {
+    trackList: [
+      "1 - Can I Get a Drink",
+      "2.1 - Original Idea - Part 1",
+      "2.2 - Original Idea - Part 2",
+      "2.3 - Original Idea - Part 3",
+      "3 - Immunity",
+    ],
+    stemsFolder:
+      "G:/My Drive/Music/Compositions/Original Songs/Musicals/O.I/STEMS",
+    outputBasePath: "H:/My Drive/Musicals/OI (Short Film)/For Performers/Audio",
   },
 } satisfies Record<string, ProjectConfig>;
