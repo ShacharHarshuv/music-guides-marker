@@ -74,6 +74,13 @@ export const projects = {
     outputBasePath:
       "H:/My Drive/BMI Workshop/BMI Class 2025 (Auditing)/Exercises/love song Clay & Anya/For Performers/Tracks",
   },
+  mbf: {
+    trackList: undefined,
+    stemsFolder:
+      "G:/My Drive/Music/Compositions/Original Songs/Musicals/standalone musical numbers/m butterfly bmi 2025/STEMS",
+    outputBasePath:
+      "H:/My Drive/BMI Workshop/BMI Class 2025 (Auditing)/Exercises/M. Butterfly - Musical Scene/For Performers/Tracks",
+  },
   oi: {
     trackList: [
       "1 - Can I Get a Drink",
@@ -85,5 +92,17 @@ export const projects = {
     stemsFolder:
       "G:/My Drive/Music/Compositions/Original Songs/Musicals/O.I/STEMS",
     outputBasePath: "H:/My Drive/Musicals/OI (Short Film)/For Performers/Audio",
+  },
+  zelda: {
+    stemsFolder:
+      "G:/My Drive/Music/Compositions/Original Songs/Musicals/Zelda/STEMS",
+    outputBasePath:
+      "H:/.shortcut-targets-by-id/1uKs30GVCHayl1gVwYFE4j7AkWz4EavIW/Across a Crowded Room 2025 - Zelda/Reading 05-30/For Performers",
+    trackList: [
+      "1 - Who Are You",
+      "2 - It's Never Too Late",
+      "3 - Nothing Ever Changes",
+      "4 - You Never Know",
+    ],
   },
 } satisfies Record<string, ProjectConfig>;

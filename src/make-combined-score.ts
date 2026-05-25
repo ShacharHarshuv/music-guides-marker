@@ -73,7 +73,9 @@ export async function makeCombinedScore(
 
   if (songHeaders.length !== songEnds.length) {
     throw new Error(
-      `The number of song headers (${songHeaders.length}) and song ends (${songEnds.length}) do not match`
+      `The number of song headers (${songHeaders.length}) and song ends (${songEnds.length}) do not match\n` +
+        `Song headers: ${songHeaders.map((item) => item.text).join(", ")}\n` +
+        `Song ends pages: ${songEnds.map((item) => item.page).join(", ")}`
     );
   }
 
@@ -101,9 +103,9 @@ export async function makeCombinedScore(
       color: rgb(1, 1, 1),
     });
 
-    pagesIndicesToRemove.forEach((pageIndex) => {
+    for (const pageIndex of [...pagesIndicesToRemove].sort((a, b) => b - a)) {
       scriptDoc.removePage(pageIndex + offset);
-    });
+    }
 
     const insertIndex = songHeader.page;
     const pagesIndicesToCopy = range(

@@ -3,10 +3,17 @@
   "tasks": [
     {
       "type": "npm",
-      "script": "start",
+      "script": "make-audio-guides",
       "problemMatcher": [],
-      "label": "npm: start",
-      "detail": "npx tsx src/index.ts"
+      "label": "npm: make-audio-guides",
+      "detail": "npx tsx src/make-audio-guides.ts"
+    },
+    {
+      "type": "npm",
+      "script": "combine-score",
+      "problemMatcher": [],
+      "label": "npm: combine-score",
+      "detail": "npx tsx src/combine-score.ts"
     }
   ]
 }

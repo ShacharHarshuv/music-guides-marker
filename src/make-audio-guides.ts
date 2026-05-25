@@ -1,12 +1,9 @@
-import { makeCombineScoreFromDirectory } from "./make-combined-score";
 import path from "node:path";
+import { exec } from "node:child_process";
 import { makeGuides } from "./make-guides";
 import { projects } from "./projects-config";
-import { exec } from "node:child_process";
-import { log } from "node:console";
 
-// Specify which project to use
-const project = projects.foreverfornow;
+const project = projects.zelda;
 
 const trackIndex: number | null = null;
 
@@ -50,14 +47,7 @@ async function main() {
   });
 }
 
-// Execute the main function
 main().catch((error) => {
   console.error("Unhandled error in main function:", error);
   process.exit(1);
 });
-
-// TODO: make it easier to switch to this, and add the score paths to the config
-// Note: requires newer version of node
-// makeCombineScoreFromDirectory(
-//   "H:/My Drive/Musicals/Amazons - Musical/Amazons - For Performers"
-// );

@@ -91,13 +91,17 @@ export async function makeGuides(options: { input: string; output: string }) {
   const hasNoVox = Object.values(rolesToGuides).every(({ vox }) => !vox);
 
   return Promise.all([
-    createTrack("Demo", [
-      backtrack!,
-      ...(dialogue ? [dialogue] : []),
-      ...Object.values(rolesToGuides)
-        .map(({ guide, vox }) => (hasNoVox ? guide : vox))
-        .filter((track) => track),
-    ]),
+    ...(hasNoVox
+      ? []
+      : [
+          createTrack("Demo", [
+            backtrack!,
+            ...(dialogue ? [dialogue] : []),
+            ...Object.values(rolesToGuides)
+              .map(({ vox }) => vox)
+              .filter((track) => track),
+          ]),
+        ]),
     createTrack(`Backtrack`, [backtrack!]),
     ...Object.entries(rolesToGuides).flatMap(([role, { guide, vox }]) => {
       if (!vox && !guide) {

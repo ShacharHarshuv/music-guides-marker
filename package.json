@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "start": "npx tsx src/index.ts",
-    "dev": "ts-node-dev --respawn --transpile-only src/index.ts"
+    "make-audio-guides": "npx tsx src/make-audio-guides.ts",
+    "combine-score": "npx tsx src/combine-score.ts",
+    "dev": "ts-node-dev --respawn --transpile-only src/make-audio-guides.ts"
   },
   "keywords": [],
   "author": "",
