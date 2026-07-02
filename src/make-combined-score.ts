@@ -1,28 +1,50 @@
-import { readdirSync } from "fs";
-import { PDFDocument, rgb } from "pdf-lib";
-import { readFileSync, writeFileSync } from "node:fs";
+import { readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { join, relative, dirname } from "node:path";
+import { PDFDocument, PDFPage, rgb } from "pdf-lib";
 import * as pdfjsLib from "pdfjs-dist";
 
-export async function makeCombineScoreFromDirectory(path: string) {
-  const files = readdirSync(path).filter((file) => file.endsWith(".pdf"));
-  const scores = files.filter(
-    (file) =>
-      file.toLowerCase().includes("score") &&
-      !file.toLowerCase().includes("combined")
-  );
-  if (!scores.length) {
-    throw new Error(
-      `No score found. Make sure a pdf file that includes "score" is in the folder.`
-    );
-  } else {
-    console.log(`Found ${scores.length} score(s). (${scores.join(", ")})`);
+function findScorePdfs(rootDir: string) {
+  const scores: { filePath: string; fileName: string }[] = [];
+
+  function walk(dir: string) {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const entryPath = join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walk(entryPath);
+      } else if (
+        entry.isFile() &&
+        entry.name.endsWith(".pdf") &&
+        entry.name.toLowerCase().includes("score") &&
+        !entry.name.toLowerCase().includes("combined")
+      ) {
+        scores.push({ filePath: entryPath, fileName: entry.name });
+      }
+    }
   }
 
-  const script = files.find(
-    (file) =>
-      file.toLowerCase().includes("script") &&
-      !file.toLowerCase().includes("combined")
-  );
+  walk(rootDir);
+  return scores;
+}
+
+export async function makeCombineScoreFromDirectory(path: string) {
+  const scores = findScorePdfs(path);
+  if (!scores.length) {
+    throw new Error(
+      `No score found. Make sure a pdf file that includes "score" is in the folder or a subfolder.`
+    );
+  } else {
+    console.log(
+      `Found ${scores.length} score(s). (${scores.map((score) => relative(path, score.filePath)).join(", ")})`
+    );
+  }
+
+  const script = readdirSync(path)
+    .filter((file) => file.endsWith(".pdf"))
+    .find(
+      (file) =>
+        file.toLowerCase().includes("script") &&
+        !file.toLowerCase().includes("combined")
+    );
 
   if (!script) {
     throw new Error(
@@ -32,18 +54,23 @@ export async function makeCombineScoreFromDirectory(path: string) {
     console.log(`Found script: "${script}"`);
   }
 
+  const scriptPath = join(path, script);
+
   await Promise.all(
-    scores.map(async (score) => {
-      const [scoreLabel, showName] = score.split(".")[0].split(" - ");
+    scores.map(async ({ filePath, fileName }) => {
+      const [scoreLabel, showName] = fileName.split(".")[0].split(" - ");
       console.log("showName", showName, "scoreLabel", scoreLabel);
 
       const [scriptLabel] = script.split(".")[0].split(" - ");
       console.log("scriptLabel");
 
       await makeCombinedScore(
-        `${path}/${score}`,
-        `${path}/${script}`,
-        `${path}/Combined ${scriptLabel} & ${scoreLabel} - ${showName}.pdf`
+        filePath,
+        scriptPath,
+        join(
+          dirname(filePath),
+          `Combined ${scriptLabel} & ${scoreLabel} - ${showName}.pdf`
+        )
       );
     })
   );
@@ -85,23 +112,23 @@ export async function makeCombinedScore(
     const songEnd = songEnds[i];
     const pagesIndicesToRemove = range(songHeader.page + 1, songEnd.page); // range is inclusive for start and exclusive for end
 
-    const startPage = scriptDoc.getPage(songHeader.page + offset);
-    startPage.drawRectangle({
-      x: 0,
-      y: 0, // origin is bottom left
-      width: startPage.getWidth(),
-      height: startPage.getHeight() - songHeader.y - songHeader.height + 25,
-      color: rgb(1, 1, 1),
-    });
+    const startPageIndex = songHeader.page + offset;
+    const endPageIndex = songEnd.page + offset;
+    const samePage = songHeader.page === songEnd.page;
 
-    const endPage = scriptDoc.getPage(songEnd.page + offset);
-    endPage.drawRectangle({
-      x: 0,
-      y: endPage.getHeight() - songEnd.y - 10, // origin is bottom left
-      width: endPage.getWidth(),
-      height: songEnd.y + songEnd.height - 60, // conserve page numbers
-      color: rgb(1, 1, 1),
-    });
+    let continuationPage: PDFPage | undefined;
+
+    if (samePage) {
+      [continuationPage] = await scriptDoc.copyPages(scriptDoc, [
+        startPageIndex,
+      ]);
+
+      const startPage = scriptDoc.getPage(startPageIndex);
+      whiteoutStartPage(startPage, songHeader);
+    } else {
+      whiteoutStartPage(scriptDoc.getPage(startPageIndex), songHeader);
+      whiteoutEndPage(scriptDoc.getPage(endPageIndex), songEnd);
+    }
 
     for (const pageIndex of [...pagesIndicesToRemove].sort((a, b) => b - a)) {
       scriptDoc.removePage(pageIndex + offset);
@@ -117,13 +144,45 @@ export async function makeCombinedScore(
     insertPages.forEach((page, i) => {
       scriptDoc.insertPage(insertIndex + i + offset + 1, page);
     });
+
+    if (continuationPage) {
+      whiteoutEndPage(continuationPage, songEnd);
+      scriptDoc.insertPage(
+        insertIndex + offset + 1 + pagesIndicesToCopy.length,
+        continuationPage
+      );
+    }
+
     offset += pagesIndicesToCopy.length;
     offset -= pagesIndicesToRemove.length;
+    if (continuationPage) {
+      offset += 1;
+    }
   }
 
   writeFileSync(outputFilePath, await scriptDoc.save());
 
   console.log("Done.");
+}
+
+function whiteoutStartPage(page: PDFPage, songHeader: { y: number; height: number }) {
+  page.drawRectangle({
+    x: 0,
+    y: 0,
+    width: page.getWidth(),
+    height: page.getHeight() - songHeader.y - songHeader.height + 25,
+    color: rgb(1, 1, 1),
+  });
+}
+
+function whiteoutEndPage(page: PDFPage, songEnd: { y: number; height: number }) {
+  page.drawRectangle({
+    x: 0,
+    y: page.getHeight() - songEnd.y - 10,
+    width: page.getWidth(),
+    height: songEnd.y + songEnd.height - 60,
+    color: rgb(1, 1, 1),
+  });
 }
 
 function range(start: number, end: number): number[] {
