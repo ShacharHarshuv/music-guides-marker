@@ -3,6 +3,20 @@ import { join, relative, dirname } from "node:path";
 import { PDFDocument, PDFPage, rgb } from "pdf-lib";
 import * as pdfjsLib from "pdfjs-dist";
 
+function isInScoreFolder(filePath: string, rootDir: string) {
+  const folderParts = relative(rootDir, dirname(filePath)).split(/[/\\]/);
+  return folderParts.some((part) => part.toLowerCase().includes("score"));
+}
+
+function isScorePdf(filePath: string, fileName: string, rootDir: string) {
+  const lowerName = fileName.toLowerCase();
+  return (
+    lowerName.endsWith(".pdf") &&
+    !lowerName.includes("combined") &&
+    (lowerName.includes("score") || isInScoreFolder(filePath, rootDir))
+  );
+}
+
 function findScorePdfs(rootDir: string) {
   const scores: { filePath: string; fileName: string }[] = [];
 
@@ -13,9 +27,7 @@ function findScorePdfs(rootDir: string) {
         walk(entryPath);
       } else if (
         entry.isFile() &&
-        entry.name.endsWith(".pdf") &&
-        entry.name.toLowerCase().includes("score") &&
-        !entry.name.toLowerCase().includes("combined")
+        isScorePdf(entryPath, entry.name, rootDir)
       ) {
         scores.push({ filePath: entryPath, fileName: entry.name });
       }
@@ -30,7 +42,7 @@ export async function makeCombineScoreFromDirectory(path: string) {
   const scores = findScorePdfs(path);
   if (!scores.length) {
     throw new Error(
-      `No score found. Make sure a pdf file that includes "score" is in the folder or a subfolder.`
+      `No score found. Make sure a pdf file that includes "score" in its name, or any pdf inside a "score"/"scores" subfolder, exists under the project folder.`
     );
   } else {
     console.log(
@@ -58,18 +70,22 @@ export async function makeCombineScoreFromDirectory(path: string) {
 
   await Promise.all(
     scores.map(async ({ filePath, fileName }) => {
-      const [scoreLabel, showName] = fileName.split(".")[0].split(" - ");
-      console.log("showName", showName, "scoreLabel", scoreLabel);
+      const scoreBaseName = fileName.split(".")[0];
+      const [scoreLabel, scoreShowName] = scoreBaseName.split(" - ");
 
-      const [scriptLabel] = script.split(".")[0].split(" - ");
-      console.log("scriptLabel");
+      const scriptBaseName = script.split(".")[0];
+      const [scriptLabel, scriptShowName] = scriptBaseName.split(" - ");
+      const showName = scoreShowName ?? scriptShowName;
+      console.log("showName", showName, "scoreLabel", scoreLabel);
 
       await makeCombinedScore(
         filePath,
         scriptPath,
         join(
           dirname(filePath),
-          `Combined ${scriptLabel} & ${scoreLabel} - ${showName}.pdf`
+          showName
+            ? `Combined ${scriptLabel} & ${scoreLabel} - ${showName}.pdf`
+            : `Combined ${scriptLabel} & ${scoreLabel}.pdf`
         )
       );
     })
