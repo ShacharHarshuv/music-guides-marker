@@ -116,17 +116,37 @@ export async function makeCombinedScore(
     const endPageIndex = songEnd.page + offset;
     const samePage = songHeader.page === songEnd.page;
 
-    const startPageEmpty = !hasContentAboveSongHeader(
+    const previousSongEnd = i > 0 ? songEnds[i - 1] : undefined;
+    const backToBackStart = followsPreviousSongImmediately(
       scriptTextItems,
-      songHeader.page,
-      songHeader
+      songHeader,
+      previousSongEnd
     );
+    const nextSongBackToBack =
+      i + 1 < songHeaders.length &&
+      songHeaders[i + 1].page === songEnd.page &&
+      !hasDialogueBetweenSongs(
+        scriptTextItems,
+        songEnd.page,
+        songEnd,
+        songHeaders[i + 1]
+      );
+
+    const startPageEmpty =
+      backToBackStart ||
+      !hasContentAboveSongHeader(
+        scriptTextItems,
+        songHeader.page,
+        songHeader
+      );
     const endPageEmpty =
       !samePage &&
       !hasContentBeforeSongEnd(scriptTextItems, songEnd.page, songEnd);
     const continuationNeeded =
       samePage &&
-      hasContentBeforeSongEnd(scriptTextItems, songHeader.page, songEnd);
+      (backToBackStart
+        ? hasContentAfterSongEnd(scriptTextItems, songHeader.page, songEnd)
+        : hasContentBeforeSongEnd(scriptTextItems, songHeader.page, songEnd));
 
     let continuationPage: PDFPage | undefined;
     let pageAdjust = 0;
@@ -176,7 +196,7 @@ export async function makeCombinedScore(
       scriptDoc.insertPage(insertAt + i, page);
     });
 
-    if (!samePage && !endPageEmpty) {
+    if (!samePage && !endPageEmpty && !nextSongBackToBack) {
       whiteoutEndPage(
         scriptDoc.getPage(insertAt + insertPages.length),
         songEnd
@@ -208,6 +228,44 @@ function isIgnorableScriptText(text: string) {
   return /^\d+\.?$/.test(text.trim());
 }
 
+function hasDialogueBetweenSongs(
+  textItems: { text: string; y: number; page: number }[],
+  pageIndex: number,
+  previousSongEnd: { y: number },
+  songHeader: { y: number }
+) {
+  return textItems.some(
+    (item) =>
+      item.page === pageIndex &&
+      !isSongMarker(item.text) &&
+      !isIgnorableScriptText(item.text) &&
+      item.text.trim() !== "" &&
+      item.y > previousSongEnd.y + 10 &&
+      item.y < songHeader.y - 25
+  );
+}
+
+function followsPreviousSongImmediately(
+  textItems: { text: string; y: number; page: number }[],
+  songHeader: { y: number; page: number },
+  previousSongEnd: { y: number; page: number } | undefined
+) {
+  if (!previousSongEnd) {
+    return false;
+  }
+
+  if (songHeader.page !== previousSongEnd.page) {
+    return false;
+  }
+
+  return !hasDialogueBetweenSongs(
+    textItems,
+    songHeader.page,
+    previousSongEnd,
+    songHeader
+  );
+}
+
 function hasContentAboveSongHeader(
   textItems: { text: string; y: number; page: number }[],
   pageIndex: number,
@@ -235,6 +293,21 @@ function hasContentBeforeSongEnd(
       !isIgnorableScriptText(item.text) &&
       item.text.trim() !== "" &&
       item.y < songEnd.y - 60
+  );
+}
+
+function hasContentAfterSongEnd(
+  textItems: { text: string; y: number; page: number }[],
+  pageIndex: number,
+  songEnd: { y: number }
+) {
+  return textItems.some(
+    (item) =>
+      item.page === pageIndex &&
+      !isSongMarker(item.text) &&
+      !isIgnorableScriptText(item.text) &&
+      item.text.trim() !== "" &&
+      item.y > songEnd.y + 10
   );
 }
 
