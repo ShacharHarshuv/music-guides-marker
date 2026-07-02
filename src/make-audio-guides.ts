@@ -1,10 +1,10 @@
 import path from "node:path";
 import { exec } from "node:child_process";
 import { makeGuides } from "./make-guides";
-import { projects } from "./projects-config";
+import { projects, type ProjectConfig } from "./projects-config";
 import { resolveTrackList } from "./resolve-track-list";
 
-const project = projects.oi2;
+const project: ProjectConfig = projects.oi2;
 
 const trackIndex: number | null = null;
 
@@ -26,6 +26,7 @@ async function main() {
       await makeGuides({
         input: path.join(project.stemsFolder, trackToGenerate),
         output: outputLocation,
+        demosFolder: project.demosFolder,
       });
     } catch (error) {
       console.error(

@@ -3,12 +3,19 @@ import path from "node:path";
 import { rmSync, mkdirSync, readdirSync } from "node:fs";
 import { exec } from "node:child_process";
 
-export async function makeGuides(options: { input: string; output: string }) {
+export async function makeGuides(options: {
+  input: string;
+  output: string;
+  demosFolder?: string;
+}) {
   // remove the output location if it exists
   try {
     rmSync(options.output, { recursive: true });
   } catch (e) {}
   mkdirSync(options.output, { recursive: true });
+  if (options.demosFolder) {
+    mkdirSync(options.demosFolder, { recursive: true });
+  }
 
   const files = readdirSync(options.input).filter((file) =>
     file.endsWith(".mp3")
@@ -62,11 +69,15 @@ export async function makeGuides(options: { input: string; output: string }) {
     throw new Error("No song name found.");
   }
 
-  function createTrack(name: string, files: string[]) {
+  function createTrack(
+    name: string,
+    files: string[],
+    outputDir = options.output
+  ) {
     console.log(`Creating ${name} (${files.join(", ")}) ... `);
     return combineMp3Files(
       files.map((file) => path.join(options.input, file)),
-      path.join(options.output, `${songName} - ${name}.mp3`)
+      path.join(outputDir, `${songName} - ${name}.mp3`)
     );
   }
 
@@ -94,13 +105,17 @@ export async function makeGuides(options: { input: string; output: string }) {
     ...(hasNoVox
       ? []
       : [
-          createTrack("Demo", [
-            backtrack!,
-            ...(dialogue ? [dialogue] : []),
-            ...Object.values(rolesToGuides)
-              .map(({ vox }) => vox)
-              .filter((track) => track),
-          ]),
+          createTrack(
+            "Demo",
+            [
+              backtrack!,
+              ...(dialogue ? [dialogue] : []),
+              ...Object.values(rolesToGuides)
+                .map(({ vox }) => vox)
+                .filter((track) => track),
+            ],
+            options.demosFolder
+          ),
         ]),
     createTrack(`Backtrack`, [backtrack!]),
     ...Object.entries(rolesToGuides).flatMap(([role, { guide, vox }]) => {

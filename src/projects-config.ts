@@ -2,6 +2,7 @@ export interface ProjectConfig {
   trackList?: string[];
   stemsFolder: string;
   outputBasePath: string;
+  demosFolder?: string;
 }
 
 export const projects = {
@@ -97,6 +98,7 @@ export const projects = {
     stemsFolder:
       "G:/My Drive/Music/Compositions/Original Songs/Musicals/O.I/STEMS 2",
     outputBasePath: "H:/My Drive/Musicals/OI (Short Film)/For Performers/audio",
+    demosFolder: "H:/My Drive/Musicals/OI (Short Film)/For Performers/demos",
   },
   zelda: {
     stemsFolder:
