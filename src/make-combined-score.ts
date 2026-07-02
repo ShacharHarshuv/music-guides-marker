@@ -116,41 +116,75 @@ export async function makeCombinedScore(
     const endPageIndex = songEnd.page + offset;
     const samePage = songHeader.page === songEnd.page;
 
+    const startPageEmpty = !hasContentAboveSongHeader(
+      scriptTextItems,
+      songHeader.page,
+      songHeader
+    );
+    const endPageEmpty =
+      !samePage &&
+      !hasContentBeforeSongEnd(scriptTextItems, songEnd.page, songEnd);
+    const continuationNeeded =
+      samePage &&
+      hasContentBeforeSongEnd(scriptTextItems, songHeader.page, songEnd);
+
     let continuationPage: PDFPage | undefined;
+    let pageAdjust = 0;
 
     if (samePage) {
-      [continuationPage] = await scriptDoc.copyPages(scriptDoc, [
-        startPageIndex,
-      ]);
+      if (continuationNeeded) {
+        [continuationPage] = await scriptDoc.copyPages(scriptDoc, [
+          startPageIndex,
+        ]);
+        whiteoutEndPage(continuationPage, songEnd);
+      }
 
-      const startPage = scriptDoc.getPage(startPageIndex);
-      whiteoutStartPage(startPage, songHeader);
+      if (startPageEmpty) {
+        scriptDoc.removePage(startPageIndex);
+        pageAdjust -= 1;
+      } else {
+        whiteoutStartPage(scriptDoc.getPage(startPageIndex), songHeader);
+      }
     } else {
-      whiteoutStartPage(scriptDoc.getPage(startPageIndex), songHeader);
-      whiteoutEndPage(scriptDoc.getPage(endPageIndex), songEnd);
+      if (startPageEmpty) {
+        scriptDoc.removePage(startPageIndex);
+        pageAdjust -= 1;
+      } else {
+        whiteoutStartPage(scriptDoc.getPage(startPageIndex), songHeader);
+      }
+
+      const adjustedEndPageIndex = endPageIndex + pageAdjust;
+      if (endPageEmpty) {
+        scriptDoc.removePage(adjustedEndPageIndex);
+        pageAdjust -= 1;
+      }
     }
 
+    const iterationOffset = offset + pageAdjust;
     for (const pageIndex of [...pagesIndicesToRemove].sort((a, b) => b - a)) {
-      scriptDoc.removePage(pageIndex + offset);
+      scriptDoc.removePage(pageIndex + iterationOffset);
     }
 
-    const insertIndex = songHeader.page;
     const pagesIndicesToCopy = range(
       flowPageIndexes[i],
       flowPageIndexes[i + 1]
     );
     const insertPages = await scriptDoc.copyPages(scoreDoc, pagesIndicesToCopy);
+    const insertAt = startPageEmpty ? startPageIndex : startPageIndex + 1;
 
     insertPages.forEach((page, i) => {
-      scriptDoc.insertPage(insertIndex + i + offset + 1, page);
+      scriptDoc.insertPage(insertAt + i, page);
     });
 
-    if (continuationPage) {
-      whiteoutEndPage(continuationPage, songEnd);
-      scriptDoc.insertPage(
-        insertIndex + offset + 1 + pagesIndicesToCopy.length,
-        continuationPage
+    if (!samePage && !endPageEmpty) {
+      whiteoutEndPage(
+        scriptDoc.getPage(insertAt + insertPages.length),
+        songEnd
       );
+    }
+
+    if (continuationPage) {
+      scriptDoc.insertPage(insertAt + pagesIndicesToCopy.length, continuationPage);
     }
 
     offset += pagesIndicesToCopy.length;
@@ -158,11 +192,50 @@ export async function makeCombinedScore(
     if (continuationPage) {
       offset += 1;
     }
+    offset += pageAdjust;
   }
 
   writeFileSync(outputFilePath, await scriptDoc.save());
 
   console.log("Done.");
+}
+
+function isSongMarker(text: string) {
+  return /#\d/.test(text) || /End of Song/.test(text);
+}
+
+function isIgnorableScriptText(text: string) {
+  return /^\d+\.?$/.test(text.trim());
+}
+
+function hasContentAboveSongHeader(
+  textItems: { text: string; y: number; page: number }[],
+  pageIndex: number,
+  songHeader: { y: number }
+) {
+  return textItems.some(
+    (item) =>
+      item.page === pageIndex &&
+      !isSongMarker(item.text) &&
+      !isIgnorableScriptText(item.text) &&
+      item.text.trim() !== "" &&
+      item.y < songHeader.y - 25
+  );
+}
+
+function hasContentBeforeSongEnd(
+  textItems: { text: string; y: number; page: number }[],
+  pageIndex: number,
+  songEnd: { y: number }
+) {
+  return textItems.some(
+    (item) =>
+      item.page === pageIndex &&
+      !isSongMarker(item.text) &&
+      !isIgnorableScriptText(item.text) &&
+      item.text.trim() !== "" &&
+      item.y < songEnd.y - 60
+  );
 }
 
 function whiteoutStartPage(page: PDFPage, songHeader: { y: number; height: number }) {
