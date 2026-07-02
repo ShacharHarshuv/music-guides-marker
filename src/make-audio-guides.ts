@@ -2,25 +2,20 @@ import path from "node:path";
 import { exec } from "node:child_process";
 import { makeGuides } from "./make-guides";
 import { projects } from "./projects-config";
+import { resolveTrackList } from "./resolve-track-list";
 
-const project = projects.zelda;
+const project = projects.oi2;
 
 const trackIndex: number | null = null;
 
-const trackList = project.trackList ?? [""];
+const trackList = resolveTrackList(project);
 
-if (project.trackList && trackIndex && trackList.length <= trackIndex) {
+if (trackIndex !== null && trackList.length <= trackIndex) {
   throw new Error(`Track index ${trackIndex} is out of bounds`);
 }
 
-if (trackList.length === 0) {
-  throw new Error("No tracks to generate");
-}
-
 const tracksToGenerate =
-  trackIndex !== null
-    ? [trackList[project.trackList ? trackIndex : 0]]
-    : trackList;
+  trackIndex !== null ? [trackList[trackIndex]] : trackList;
 
 async function main() {
   for (const [index, trackToGenerate] of tracksToGenerate.entries()) {

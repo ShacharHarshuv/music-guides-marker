@@ -93,6 +93,11 @@ export const projects = {
       "G:/My Drive/Music/Compositions/Original Songs/Musicals/O.I/STEMS",
     outputBasePath: "H:/My Drive/Musicals/OI (Short Film)/For Performers/Audio",
   },
+  oi2: {
+    stemsFolder:
+      "G:/My Drive/Music/Compositions/Original Songs/Musicals/O.I/STEMS 2",
+    outputBasePath: "H:/My Drive/Musicals/OI (Short Film)/For Performers/audio",
+  },
   zelda: {
     stemsFolder:
       "G:/My Drive/Music/Compositions/Original Songs/Musicals/Zelda/STEMS",
