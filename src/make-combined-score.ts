@@ -111,7 +111,7 @@ export async function makeCombinedScore(
   const scriptTextItems = await extractTextItems(scriptBuffer);
   const songHeaders = scriptTextItems.filter((item) => /#\d/.test(item.text));
   const songEnds = scriptTextItems.filter((item) =>
-    /End of Song/.test(item.text)
+    /End of Song/i.test(item.text)
   );
 
   if (songHeaders.length !== songEnds.length) {
